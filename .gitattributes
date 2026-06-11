@@ -1,0 +1,5 @@
+# golden fixtures 与源码强制 LF，保证跨平台字节稳定（conformance 锚点）。
+*.json text eol=lf
+*.ts   text eol=lf
+*.rs   text eol=lf
+*.toml text eol=lf
