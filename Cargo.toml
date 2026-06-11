@@ -1,0 +1,24 @@
+# ridge-signaling — Ridge 远控**信令 WebSocket** 消息的单一事实来源（SSOT）。
+#
+# 独立微仓（与 ridge-cloud / wind 同级，C:\code\ridge-signaling）。relay（ridge-cloud）
+# 与 ridge-cli（wind workspace 成员）本地 dev 阶段用 `path` 依赖引用；正式发布改 `git`
+# 依赖锁 rev。纯 serde 数据模型，无 tokio/axum 等重依赖，故引入它不污染任一端的依赖树。
+#
+# 自成 workspace 根（下方空 [workspace]）：阻止被任何父目录 workspace 吸收，
+# 编译/测试用本仓独立 `target/`，绝不与 wind 的 tauri-dev target 锁竞争。
+
+[package]
+name = "ridge-signaling"
+version = "0.1.0"
+edition = "2021"
+description = "Ridge 远控信令消息 schema 的单一事实来源（relay/桌面/ridge-cli 四端共用）"
+license = "MIT"
+
+[workspace]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# TS 类型生成（生成/对照 TS）。serde-compat（默认）读 serde 的 tag/rename_all/rename，
+# serde-json-impl 让 serde_json::Value 映射为 TS 的 any/JsonValue。
+ts-rs = { version = "10", features = ["serde-json-impl"] }

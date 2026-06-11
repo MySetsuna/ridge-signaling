@@ -1,0 +1,5 @@
+# Rust build output（本仓独立 target，不入库）。
+/target
+
+# 库 crate 不提交 Cargo.lock（由消费方 workspace 锁定版本）。
+Cargo.lock
