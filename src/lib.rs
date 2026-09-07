@@ -1,4 +1,4 @@
-//! `ridge-signaling` —— Ridge 远控**信令 WebSocket** 消息的单一事实来源（SSOT）。
+//! `ridge-signaling` —— Ridge 远控信令与终端传输协议的单一事实来源（SSOT）。
 //!
 //! ## 为什么存在
 //! 审核（`wind/.agent-team/findings-align.md`）发现同一信令契约被 **4 处各自手写**并已
@@ -7,10 +7,11 @@
 //! ridge-cli **全程缺 `cid`** 导致浏览器 controller 连不上（P0）。本 crate 把信令消息
 //! schema 收敛为唯一定义，四端共用，并由 golden-fixture 跨语言 conformance 钉死线形。
 //!
-//! ## 三层协议边界（本 crate 只管 A 层）
+//! ## 三层协议边界
 //! - **A 层 信令 JSON**（relay WebSocket 文本帧，relay 只读 `t`/`cid` 路由）→ **本 crate**。
 //! - **B 层 E2EE 握手二进制首帧**（DataChannel，加密前，relay 不经手）→ `e2ee.ts`/`e2ee.rs`。
-//! - **C 层 E2EE 内明文 mux**（DataChannel，加密后）→ `cloudMux.ts`/`mux.rs` + SessionControl。
+//! - **C 层 E2EE 内明文 mux**（DataChannel，加密后）→ tag 注册表与终端语义帧由
+//!   **本 crate** 定义；JSON-RPC 与 SessionControl 仍由各业务 crate 定义。
 //!
 //! 跨层的**二进制 tag** 与 **CONTROL 子类型**、**信令错误码**集中登记在 [`tags`] /
 //! [`control`] / [`error_code`]，作为防 tag 撞车的单一注册表（实际编解码器仍在各层 SSOT）。
@@ -23,6 +24,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use ts_rs::TS;
+
+pub mod terminal_v2;
 
 /// 房间内 controller 寻址 id（relay 注入/读取）。
 ///
@@ -175,12 +178,16 @@ pub mod tags {
     }
     /// DataChannel **加密后**明文 mux（C 层）。
     pub mod mux {
-        /// 某 pane 的裸 PTY 字节：`0x10 || paneIdLen(1) || paneId || raw`。
+        /// 旧版某 pane 的裸 PTY 字节：`0x10 || paneIdLen(1) || paneId || raw`。
+        ///
+        /// 仅为旧端兼容保留；v2 controller 不得订阅或发送此帧。
         pub const PANE_RAW: u8 = 0x10;
         /// UTF-8 JSON：JSON-RPC 2.0 业务信封。
         pub const JSON: u8 = 0x11;
         /// UTF-8 JSON：会话控制（[`crate::control`] 子类型）。
         pub const CONTROL: u8 = 0x12;
+        /// v2 终端语义帧：`0x13 || postcard(TerminalEnvelope)`。
+        pub const TERMINAL_SEMANTIC: u8 = crate::terminal_v2::MUX_TAG;
     }
 }
 
