@@ -7,10 +7,11 @@
 //! ridge-cli **全程缺 `cid`** 导致浏览器 controller 连不上（P0）。本 crate 把信令消息
 //! schema 收敛为唯一定义，四端共用，并由 golden-fixture 跨语言 conformance 钉死线形。
 //!
-//! ## 三层协议边界（本 crate 只管 A 层）
+//! ## 三层协议边界
 //! - **A 层 信令 JSON**（relay WebSocket 文本帧，relay 只读 `t`/`cid` 路由）→ **本 crate**。
 //! - **B 层 E2EE 握手二进制首帧**（DataChannel，加密前，relay 不经手）→ `e2ee.ts`/`e2ee.rs`。
 //! - **C 层 E2EE 内明文 mux**（DataChannel，加密后）→ `cloudMux.ts`/`mux.rs` + SessionControl。
+//! - **终端语义与字节输入** → [`terminal`]：桌面、LAN、Cloud 共用，传输不重建历史。
 //!
 //! 跨层的**二进制 tag** 与 **CONTROL 子类型**、**信令错误码**集中登记在 [`tags`] /
 //! [`control`] / [`error_code`]，作为防 tag 撞车的单一注册表（实际编解码器仍在各层 SSOT）。
@@ -23,6 +24,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use ts_rs::TS;
+
+pub mod terminal;
 
 /// 房间内 controller 寻址 id（relay 注入/读取）。
 ///
@@ -181,6 +184,8 @@ pub mod tags {
         pub const JSON: u8 = 0x11;
         /// UTF-8 JSON：会话控制（[`crate::control`] 子类型）。
         pub const CONTROL: u8 = 0x12;
+        /// Canonical terminal semantic frame (same codec on desktop/LAN/Cloud).
+        pub const TERMINAL: u8 = crate::terminal::MUX_TAG;
     }
 }
 
