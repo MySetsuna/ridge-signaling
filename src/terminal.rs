@@ -579,10 +579,14 @@ pub fn validate_history_request(request: &HistoryRequest) -> Result<(), Protocol
 pub fn validate_input(input: &TerminalInput) -> Result<(), ProtocolError> {
     if !input.pane.is_valid()
         || input.terminal_epoch.is_empty()
+        || input.terminal_epoch.len() > 256
         || input.source_id.is_empty()
+        || input.source_id.len() > 64
+        || !input.source_id.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
         || input.sequence == 0
         || input.sequence > MAX_JSON_INTEGER
         || input.activation_id > MAX_JSON_INTEGER
+        || input.activation_id == 0
         || input.bytes.is_empty()
         || input.bytes.len() > MAX_INPUT_BYTES
     {

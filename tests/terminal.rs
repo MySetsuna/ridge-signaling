@@ -206,6 +206,11 @@ fn binary_mouse_input_and_lifetime_fences_survive_json_rpc() {
     validate_input(&input).unwrap();
     let json = serde_json::to_string(&input).unwrap();
     assert_eq!(serde_json::from_str::<TerminalInput>(&json).unwrap(), input);
+    for (source, epoch, activation) in [("bad/source".to_owned(), "epoch".to_owned(), 7), ("s".repeat(65), "epoch".to_owned(), 7), ("source".to_owned(), "e".repeat(257), 7), ("source".to_owned(), "epoch".to_owned(), 0)] {
+        let mut invalid = input.clone();
+        invalid.source_id = source; invalid.terminal_epoch = epoch; invalid.activation_id = activation;
+        assert!(validate_input(&invalid).is_err());
+    }
     let mut invalid = input;
     invalid.bytes = vec![0; MAX_INPUT_BYTES + 1];
     assert_eq!(
