@@ -228,3 +228,16 @@ fn binary_mouse_input_and_lifetime_fences_survive_json_rpc() {
         Err(ProtocolError::Invalid("history request"))
     );
 }
+
+#[test]
+fn hello_fixture_is_generated_from_the_same_contract_constants() {
+    let path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/terminal/hello.json");
+    let hello = TerminalHello::default();
+    if std::env::var_os("UPDATE_TERMINAL_FIXTURES").is_some() {
+        std::fs::write(&path, serde_json::to_string_pretty(&hello).unwrap() + "\n").unwrap();
+    }
+    let fixture: TerminalHello =
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    assert_eq!(fixture, hello);
+}
